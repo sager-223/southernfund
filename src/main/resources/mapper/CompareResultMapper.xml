@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.southern.dataconsistencychecker.mapper.CompareResultMapper">
+
+    <resultMap id="CompareResultResultMap" type="com.southern.dataconsistencychecker.entity.CompareResult">
+        <id property="id" column="id" />
+        <result property="compareConfigId" column="compare_config_id" />
+        <result property="compareTaskId" column="compare_task_id" />
+        <result property="sourceDataDetails" column="source_data_details" />
+        <result property="targetDataDetails" column="target_data_details" />
+        <result property="compareTime" column="compare_time" />
+        <result property="compareStatus" column="compare_status" />
+        <result property="description" column="description" />
+        <result property="emailNotificationStatus" column="email_notification_status" />
+        <result property="smsNotificationStatus" column="sms_notification_status" />
+        <result property="isConsistent" column="is_consistent" />
+        <result property="createTime" column="create_time" />
+        <result property="updateTime" column="update_time" />
+    </resultMap>
+
+    <!-- 插入比较结果 -->
+    <insert id="insertCompareResult" parameterType="com.southern.dataconsistencychecker.entity.CompareResult" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO compare_result (
+            compare_config_id,
+            compare_task_id,
+            source_data_details,
+            target_data_details,
+            compare_time,
+            compare_status,
+            description,
+            email_notification_status,
+            sms_notification_status,
+            is_consistent,
+            create_time,
+            update_time
+        ) VALUES (
+                     #{compareConfigId},
+                     #{compareTaskId},
+                     #{sourceDataDetails},
+                     #{targetDataDetails},
+                     #{compareTime},
+                     #{compareStatus},
+                     #{description},
+                     #{emailNotificationStatus},
+                     #{smsNotificationStatus},
+                     #{isConsistent},
+                     SYSDATE,
+                     SYSDATE
+                 )
+    </insert>
+
+    <!-- 更新比较结果 -->
+    <update id="updateCompareResult" parameterType="com.southern.dataconsistencychecker.entity.CompareResult">
+        UPDATE compare_result
+        SET
+            compare_status = #{compareStatus},
+            description = #{description},
+            email_notification_status = #{emailNotificationStatus},
+            sms_notification_status = #{smsNotificationStatus},
+            is_consistent = #{isConsistent},
+            update_time = SYSDATE
+        WHERE
+            compare_task_id = #{compareTaskId}
+    </update>
+
+</mapper>

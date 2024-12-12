@@ -1,9 +1,11 @@
 package com.southern.dataconsistencychecker.entity;
 
+import lombok.Builder;
 import lombok.Data;
 import java.util.Date;
 
 @Data
+@Builder
 public class DataSourceConfigEntity {
     private Long id;
     private String name;

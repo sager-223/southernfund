@@ -1,9 +1,11 @@
 package com.southern.dataconsistencychecker.entity;
 
+import lombok.Builder;
 import lombok.Data;
 import java.util.Date;
 
 @Data
+@Builder
 public class CompareResult {
     private Long id;
     private Long compareConfigId;
