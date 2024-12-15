@@ -1,18 +1,22 @@
-package com.southern.dataconsistencychecker.service;
+package com.southern.dataconsistencychecker.strategy.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.southern.dataconsistencychecker.config.DynamicDataSource;
+
+
+
+import com.alibaba.fastjson2.JSON;
 import com.southern.dataconsistencychecker.entity.CompareConfig;
 import com.southern.dataconsistencychecker.entity.CompareResult;
-import com.southern.dataconsistencychecker.entity.DataSourceConfigEntity;
+import com.southern.dataconsistencychecker.entity.DataSourceConfig;
+import com.southern.dataconsistencychecker.manager.DataSourceManager;
 import com.southern.dataconsistencychecker.mapper.CompareResultMapper;
 import com.southern.dataconsistencychecker.mapper.DataSourceConfigMapper;
-import org.springframework.stereotype.Service;
+import com.southern.dataconsistencychecker.strategy.ConsistencyCheckStrategy;
+import org.springframework.stereotype.Component;
 
 import javax.sql.DataSource;
 import java.sql.*;
+import java.time.LocalDateTime;
 import java.util.*;
-import java.util.Date;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -20,52 +24,54 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-@Service
-public class CompareService {
+@Component("database")
+public class DatabaseBasedStrategy implements ConsistencyCheckStrategy {
 
     private final DataSourceConfigMapper dataSourceConfigMapper;
-    private final DynamicDataSource dynamicDataSource;
+    private final DataSourceManager dataSourceManager;
     private final CompareResultMapper compareResultMapper;
-    private final ObjectMapper objectMapper = new ObjectMapper();
     private final AtomicLong taskIdGenerator = new AtomicLong(System.currentTimeMillis());
 
     // 定义分页大小和线程池大小
     private static final int PAGE_SIZE = 1000;
     private static final int THREAD_POOL_SIZE = 10;
 
-    public CompareService(DataSourceConfigMapper dataSourceConfigMapper,
-                          DynamicDataSource dynamicDataSource,
+    public DatabaseBasedStrategy(DataSourceConfigMapper dataSourceConfigMapper,
+                          DataSourceManager dataSourceManager,
                           CompareResultMapper compareResultMapper) {
         this.dataSourceConfigMapper = dataSourceConfigMapper;
-        this.dynamicDataSource = dynamicDataSource;
+        this.dataSourceManager = dataSourceManager;
         this.compareResultMapper = compareResultMapper;
     }
 
-    public void executeCompare(CompareConfig config) {
+    @Override
+    public void execute(CompareConfig config) {
         Long taskId = taskIdGenerator.incrementAndGet();
         CompareResult result = new CompareResult();
         result.setCompareConfigId(config.getId());
         result.setCompareTaskId(taskId);
-        result.setCompareTime(new Date());
+        result.setCompareTime(LocalDateTime.now());
 
         // 使用线程安全的集合来存储不一致信息
         ConcurrentLinkedQueue<String> inconsistencyDetails = new ConcurrentLinkedQueue<>();
         AtomicBoolean isConsistent = new AtomicBoolean(true);
 
         try {
-            DataSource sourceDS = dynamicDataSource.getDataSourceById(config.getSourceDataSourceId());
-            DataSource targetDS = dynamicDataSource.getDataSourceById(config.getTargetDataSourceId());
+            DataSource sourceDS = dataSourceManager.getDataSourceById(config.getSourceDataSourceId());
+            DataSource targetDS = dataSourceManager.getDataSourceById(config.getTargetDataSourceId());
 
             if (sourceDS == null || targetDS == null) {
                 throw new RuntimeException("数据源未找到，请检查配置的源和目标数据源 ID。");
             }
 
-            DataSourceConfigEntity sourceConfig = dataSourceConfigMapper.getDataSourceConfigById(config.getSourceDataSourceId());
-            DataSourceConfigEntity targetConfig = dataSourceConfigMapper.getDataSourceConfigById(config.getTargetDataSourceId());
+            DataSourceConfig sourceConfig = dataSourceConfigMapper.findById(config.getSourceDataSourceId());
+            DataSourceConfig targetConfig = dataSourceConfigMapper.findById(config.getTargetDataSourceId());
 
-            // 设置数据详情为 JSON
-            result.setSourceDataDetails(objectMapper.writeValueAsString(sourceConfig));
-            result.setTargetDataDetails(objectMapper.writeValueAsString(targetConfig));
+            //TODO LocalDateTime序列化问题
+            String sourceDataDetails = JSON.toJSONString(sourceConfig);
+            String targetDataDetails = JSON.toJSONString(targetConfig);
+            result.setSourceDataDetails(sourceDataDetails);
+            result.setTargetDataDetails(targetDataDetails);
 
             // 获取比较配置
             String targetTable = config.getTargetTable();

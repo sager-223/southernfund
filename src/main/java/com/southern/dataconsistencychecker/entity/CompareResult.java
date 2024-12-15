@@ -1,21 +1,24 @@
 package com.southern.dataconsistencychecker.entity;
 
 import lombok.Data;
-import java.util.Date;
+
+import java.io.Serializable;
+import java.time.LocalDateTime;
 
 @Data
-public class CompareResult {
+public class CompareResult implements Serializable {
+    private static final long serialVersionUID = 1L;
     private Long id;
     private Long compareConfigId;
     private Long compareTaskId;
-    private String sourceDataDetails; // JSON format
-    private String targetDataDetails; // JSON format
-    private Date compareTime;
-    private String compareStatus; // SUCCESS, FAIL
+    private String sourceDataDetails;
+    private String targetDataDetails;
+    private LocalDateTime compareTime;
+    private String compareStatus;
     private String description;
-    private String emailNotificationStatus; // noNeed, true, false
-    private String smsNotificationStatus; // noNeed, true, false
+    private String emailNotificationStatus;
+    private String smsNotificationStatus;
     private Boolean isConsistent;
-    private Date createTime;
-    private Date updateTime;
+    private LocalDateTime createTime;
+    private LocalDateTime updateTime;
 }

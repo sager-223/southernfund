@@ -6,13 +6,8 @@ import org.apache.ibatis.annotations.Mapper;
 
 @Mapper
 public interface CompareResultMapper {
-    @Insert("<script>" +
-            "INSERT INTO compare_result " +
-            "(compare_config_id, compare_task_id, source_data_details, target_data_details, compare_time, " +
-            "compare_status, description, email_notification_status, sms_notification_status, is_consistent, create_time, update_time) " +
-            "VALUES " +
-            "(#{compareConfigId}, #{compareTaskId}, #{sourceDataDetails}, #{targetDataDetails}, #{compareTime}, " +
-            "#{compareStatus}, #{description}, #{emailNotificationStatus}, #{smsNotificationStatus}, #{isConsistent}, sysdate, sysdate)" +
-            "</script>")
-    void insertCompareResult(CompareResult compareResult);
+
+    @Insert("INSERT INTO COMPARE_RESULT (COMPARE_CONFIG_ID, COMPARE_TASK_ID, SOURCE_DATA_DETAILS, TARGET_DATA_DETAILS, COMPARE_TIME, COMPARE_STATUS, DESCRIPTION, EMAIL_NOTIFICATION_STATUS, SMS_NOTIFICATION_STATUS, IS_CONSISTENT, CREATE_TIME, UPDATE_TIME) " +
+            "VALUES (#{compareConfigId}, #{compareTaskId}, #{sourceDataDetails}, #{targetDataDetails}, #{compareTime}, #{compareStatus}, #{description}, #{emailNotificationStatus}, #{smsNotificationStatus}, #{isConsistent}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
+    void insertCompareResult(CompareResult result);
 }

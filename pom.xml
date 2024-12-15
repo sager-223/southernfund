@@ -29,6 +29,11 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter</artifactId>
 		</dependency>
+		<!-- Spring Boot Starter Web 依赖 -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
 
 		<!-- MyBatis Spring Boot Starter -->
 		<dependency>
@@ -66,12 +71,25 @@
 			<version>1.18.22</version>
 			<scope>provided</scope>
 		</dependency>
-
-		<!-- JSON Processing -->
 		<dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-databind</artifactId>
+			<groupId>com.alibaba.fastjson2</groupId>
+			<artifactId>fastjson2</artifactId>
+			<version>2.0.35</version> <!-- 请使用最新的稳定版本 -->
 		</dependency>
+
+<!--		&lt;!&ndash; JSON Processing &ndash;&gt;-->
+<!--		<dependency>-->
+<!--			<groupId>com.fasterxml.jackson.core</groupId>-->
+<!--			<artifactId>jackson-databind</artifactId>-->
+<!--			<version>2.15.2</version>-->
+<!--		</dependency>-->
+
+<!--		&lt;!&ndash; Jackson Module for Java 8 Date/Time (JSR310) &ndash;&gt;-->
+<!--		<dependency>-->
+<!--			<groupId>com.fasterxml.jackson.datatype</groupId>-->
+<!--			<artifactId>jackson-datatype-jsr310</artifactId>-->
+<!--			<version>2.15.2</version> &lt;!&ndash; 请确保版本与 jackson-databind 一致 &ndash;&gt;-->
+<!--		</dependency>-->
 
 		<!-- Spring Boot Schedule -->
 		<dependency>

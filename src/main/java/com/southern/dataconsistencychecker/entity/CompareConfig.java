@@ -1,10 +1,14 @@
 package com.southern.dataconsistencychecker.entity;
 
+
 import lombok.Data;
-import java.util.Date;
+
+import java.io.Serializable;
+import java.time.LocalDateTime;
 
 @Data
-public class CompareConfig {
+public class CompareConfig implements Serializable {
+    private static final long serialVersionUID = 1L;
     private Long id;
     private Long sourceDataSourceId;
     private Long targetDataSourceId;
@@ -19,6 +23,6 @@ public class CompareConfig {
     private String cronExpression;
     private String notificationEmail;
     private String notificationPhone;
-    private Date createTime;
-    private Date updateTime;
+    private LocalDateTime createTime;
+    private LocalDateTime updateTime;
 }

@@ -1,6 +1,6 @@
 spring:
   datasource:
-#    type: com.zaxxer.hikari.HikariDataSource
+    #    type: com.zaxxer.hikari.HikariDataSource
     url: jdbc:oracle:thin:@//localhost:1521/ORCLPDB1
     username: liulangsha
     password: liu123
@@ -15,6 +15,7 @@ mybatis:
   configuration:
 #     开启驼峰命名
     map-underscore-to-camel-case: true
+    jdbcTypeForNull: VARCHAR
 
 # 其他配置
 logging:
