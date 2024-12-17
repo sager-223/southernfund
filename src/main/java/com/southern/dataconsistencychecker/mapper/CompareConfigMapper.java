@@ -10,7 +10,7 @@ public interface CompareConfigMapper {
 
     @Insert("INSERT INTO COMPARE_CONFIG (SOURCE_DATA_SOURCE_ID, TARGET_DATA_SOURCE_ID, SOURCE_TABLE, TARGET_TABLE, SOURCE_CONDITIONS, TARGET_CONDITIONS, SOURCE_COMPARE_FIELDS, TARGET_COMPARE_FIELDS, SOURCE_UNIQUE_KEYS, TARGET_UNIQUE_KEYS, CRON_EXPRESSION, NOTIFICATION_EMAIL, NOTIFICATION_PHONE) " +
             "VALUES (#{sourceDataSourceId}, #{targetDataSourceId}, #{sourceTable}, #{targetTable}, #{sourceConditions}, #{targetConditions}, #{sourceCompareFields}, #{targetCompareFields}, #{sourceUniqueKeys}, #{targetUniqueKeys}, #{cronExpression}, #{notificationEmail}, #{notificationPhone})")
-    @Options(useGeneratedKeys = true, keyProperty = "id")
+    //@Options(useGeneratedKeys = true, keyProperty = "id")
     void insertCompareConfig(CompareConfig config);
 
     @Select("SELECT * FROM COMPARE_CONFIG")
