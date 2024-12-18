@@ -29,7 +29,7 @@ public class TaskScheduler {
     }
 
     public void scheduleTask(CompareConfig config) {
-        String strategyType = "memory"; // 根据config决定使用哪种策略，这里假设使用内存策略
+        String strategyType = "memory2"; // 根据config决定使用哪种策略，这里假设使用内存策略
         ConsistencyCheckStrategy strategy = strategyFactory.getStrategy(strategyType);
 
         // 使用 CronTrigger 处理 CRON 表达式
