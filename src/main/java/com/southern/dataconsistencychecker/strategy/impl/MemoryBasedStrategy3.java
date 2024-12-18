@@ -2,15 +2,14 @@ package com.southern.dataconsistencychecker.strategy.impl;
 
 import com.alibaba.fastjson2.JSON;
 import com.southern.dataconsistencychecker.entity.CompareConfig;
-import com.southern.dataconsistencychecker.entity.CompareDetailLog;
 import com.southern.dataconsistencychecker.entity.CompareResult;
+import com.southern.dataconsistencychecker.entity.CompareDetailLog; // 新增导入
 import com.southern.dataconsistencychecker.manager.DataSourceManager;
-import com.southern.dataconsistencychecker.mapper.CompareDetailLogMapper;
+import com.southern.dataconsistencychecker.mapper.CompareDetailLogMapper; // 新增导入
 import com.southern.dataconsistencychecker.mapper.CompareResultMapper;
 import com.southern.dataconsistencychecker.strategy.ConsistencyCheckStrategy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
 import javax.sql.DataSource;
 import java.sql.*;
 import java.time.LocalDateTime;
@@ -19,34 +18,29 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * 实现了
- * 基于内存
- * md5分片
- * 多线程
- * 数据一致性比对
+ * 基于内存，分批引入内存
+ * md5 hash分区，多线程
+ * 结果写入更详细的CompareDetailLog
  */
-
 @Component("memory3")
 public class MemoryBasedStrategy3 implements ConsistencyCheckStrategy {
-
     @Autowired
     private DataSourceManager dataSourceManager;
 
     @Autowired
     private CompareResultMapper compareResultMapper;
 
-    @Autowired
+    @Autowired // 新增注入 CompareDetailLogMapper
     private CompareDetailLogMapper compareDetailLogMapper;
 
     private static final int DEFAULT_SHARD_COUNT = 4; // 默认分片数，可根据需要调整或从配置中获取
 
     @Override
     public void execute(CompareConfig config) {
-        int shardCount = DEFAULT_SHARD_COUNT;
-
-        // 生成 CompareTaskId
+        // 生成唯一的 compare_task_id
         long compareTaskId = generateCompareTaskId();
 
+        int shardCount = DEFAULT_SHARD_COUNT;
         ExecutorService executorService = Executors.newFixedThreadPool(shardCount);
         List<Future<ShardCompareResult>> futures = new ArrayList<>();
 
@@ -75,14 +69,14 @@ public class MemoryBasedStrategy3 implements ConsistencyCheckStrategy {
         // 准备 CompareResult
         CompareResult compareResult = new CompareResult();
         compareResult.setCompareConfigId(config.getId());
-        compareResult.setCompareTaskId(compareTaskId);
+        compareResult.setCompareTaskId(compareTaskId); // 使用生成的 compare_task_id
         compareResult.setSourceDataDetails(JSON.toJSONString(getDataDetails(
                 dataSourceManager.getDataSourceById(config.getSourceDataSourceId()))));
         compareResult.setTargetDataDetails(JSON.toJSONString(getDataDetails(
                 dataSourceManager.getDataSourceById(config.getTargetDataSourceId()))));
         compareResult.setCompareTime(LocalDateTime.now());
         compareResult.setCompareStatus("SUCCESS");
-        compareResult.setDescription(totalDiscrepancies.get() > 0 ? "存在不一致" : "一致");
+        compareResult.setDescription(String.format("发现不一致，一共%d处。", totalDiscrepancies.get())); // 设置为简单描述
         compareResult.setEmailNotificationStatus("noNeed"); // 根据需要设置
         compareResult.setSmsNotificationStatus("noNeed");   // 根据需要设置
         compareResult.setIsConsistent(totalDiscrepancies.get() == 0 ? true : false);
@@ -100,7 +94,7 @@ public class MemoryBasedStrategy3 implements ConsistencyCheckStrategy {
         private final CompareConfig config;
         private final int shardNumber;
         private final int shardCount;
-        private final long compareTaskId;
+        private final long compareTaskId; // 新增 compare_task_id
 
         public ShardCompareTask(CompareConfig config, int shardNumber, int shardCount, long compareTaskId) {
             this.config = config;
@@ -139,9 +133,6 @@ public class MemoryBasedStrategy3 implements ConsistencyCheckStrategy {
             ResultSet sourceRs = null;
             ResultSet targetRs = null;
 
-            // 用于批量插入 CompareDetailLog 的列表
-            List<CompareDetailLog> detailLogs = new ArrayList<>(1000);
-
             try {
                 sourceConn = sourceDS.getConnection();
                 targetConn = targetDS.getConnection();
@@ -174,156 +165,146 @@ public class MemoryBasedStrategy3 implements ConsistencyCheckStrategy {
 
                         if (comparison == 0) {
                             // 键匹配，比较字段
-                            List<String> fieldDifferences = new ArrayList<>();
-
-                            CompareDetailLog log = new CompareDetailLog();
-                            log.setCompareTaskId(compareTaskId);
-                            log.setSourceDataSourceId(config.getSourceDataSourceId());
-                            log.setTargetDataSourceId(config.getTargetDataSourceId());
-                            log.setSourceTable(sourceTable);
-                            log.setTargetTable(targetTable);
-                            log.setType(3); // 字段不一致
-
-                            StringBuilder sourceFields = new StringBuilder();
-                            StringBuilder targetFields = new StringBuilder();
-
+                            boolean hasFieldDifference = false;
                             for (int i = 0; i < sourceCompareFields.length; i++) {
                                 String sourceValue = sourceRs.getString(sourceCompareFields[i].trim());
                                 String targetValue = targetRs.getString(targetCompareFields[i].trim());
                                 if (!Objects.equals(sourceValue, targetValue)) {
-                                    fieldDifferences.add(String.format("字段 '%s' 不一致，source= %s, target= %s",
-                                            sourceCompareFields[i].trim(), sourceValue, targetValue));
-                                    sourceFields.append(sourceCompareFields[i].trim()).append(", ");
-                                    targetFields.append(targetCompareFields[i].trim()).append(", ");
+                                    hasFieldDifference = true;
+                                    // 创建并插入 CompareDetailLog 记录
+                                    CompareDetailLog log = new CompareDetailLog();
+                                    log.setCompareTaskId(compareTaskId);
+                                    log.setSourceDataSourceId(config.getSourceDataSourceId());
+                                    log.setTargetDataSourceId(config.getTargetDataSourceId());
+                                    log.setSourceTable(sourceTable);
+                                    log.setTargetTable(targetTable);
+                                    log.setType(3); // 类型3：字段不一致
+                                    log.setSourceUniqueKeys(sourceKey);
+                                    log.setTargetUniqueKeys(targetKey);
+                                    log.setSourceFieldKey(sourceCompareFields[i].trim());
+                                    log.setSourceFieldValue(sourceValue);
+                                    log.setTargetFieldKey(targetCompareFields[i].trim());
+                                    log.setTargetFieldValue(targetValue);
+                                    log.setCreateTime(LocalDateTime.now());
+                                    log.setUpdateTime(LocalDateTime.now());
+
+                                    compareDetailLogMapper.insertCompareDetailLog(log);
+                                    discrepancies++;
                                 }
                             }
-
-                            if (!fieldDifferences.isEmpty()) {
-                                discrepancies++;
-
-                                log.setSourceFieldKey(String.join(", ", sourceCompareFields));
-                                log.setSourceFieldValue(sourceFields.toString());
-                                log.setTargetFieldKey(String.join(", ", targetCompareFields));
-                                log.setTargetFieldValue(targetFields.toString());
-
-                                detailLogs.add(log);
-
-                                // 达到1000条，批量插入
-                                if (detailLogs.size() >= 1000) {
-                                    compareDetailLogMapper.batchInsert(new ArrayList<>(detailLogs));
-                                    detailLogs.clear();
-                                }
-                            }
-
                             sourceHasNext = sourceRs.next();
                             targetHasNext = targetRs.next();
                         } else if (comparison < 0) {
                             // Source 键在 Target 中缺失
-                            discrepancies++;
-
                             CompareDetailLog log = new CompareDetailLog();
                             log.setCompareTaskId(compareTaskId);
                             log.setSourceDataSourceId(config.getSourceDataSourceId());
                             log.setTargetDataSourceId(config.getTargetDataSourceId());
                             log.setSourceTable(sourceTable);
                             log.setTargetTable(targetTable);
-                            log.setType(1); // source表唯一键缺失
+                            log.setType(2); // 类型2：target表唯一键缺失
                             log.setSourceUniqueKeys(sourceKey);
+                            log.setTargetUniqueKeys(null);
+                            log.setSourceFieldKey(null);
+                            log.setSourceFieldValue(null);
+                            log.setTargetFieldKey(null);
+                            log.setTargetFieldValue(null);
                             log.setCreateTime(LocalDateTime.now());
                             log.setUpdateTime(LocalDateTime.now());
 
-                            detailLogs.add(log);
-
-                            // 达到1000条，批量插入
-                            if (detailLogs.size() >= 1000) {
-                                compareDetailLogMapper.batchInsert(new ArrayList<>(detailLogs));
-                                detailLogs.clear();
-                            }
-
+                            compareDetailLogMapper.insertCompareDetailLog(log);
+                            discrepancies++;
                             sourceHasNext = sourceRs.next();
                         } else {
                             // Target 键在 Source 中缺失
-                            discrepancies++;
-
                             CompareDetailLog log = new CompareDetailLog();
                             log.setCompareTaskId(compareTaskId);
                             log.setSourceDataSourceId(config.getSourceDataSourceId());
                             log.setTargetDataSourceId(config.getTargetDataSourceId());
                             log.setSourceTable(sourceTable);
                             log.setTargetTable(targetTable);
-                            log.setType(2); // target表唯一键缺失
+                            log.setType(1); // 类型1：source表唯一键缺失
+                            log.setSourceUniqueKeys(null);
                             log.setTargetUniqueKeys(targetKey);
+                            log.setSourceFieldKey(null);
+                            log.setSourceFieldValue(null);
+                            log.setTargetFieldKey(null);
+                            log.setTargetFieldValue(null);
                             log.setCreateTime(LocalDateTime.now());
                             log.setUpdateTime(LocalDateTime.now());
 
-                            detailLogs.add(log);
-
-                            // 达到1000条，批量插入
-                            if (detailLogs.size() >= 1000) {
-                                compareDetailLogMapper.batchInsert(new ArrayList<>(detailLogs));
-                                detailLogs.clear();
-                            }
-
+                            compareDetailLogMapper.insertCompareDetailLog(log);
+                            discrepancies++;
                             targetHasNext = targetRs.next();
                         }
                     } else if (sourceHasNext) {
                         // Source 还有剩余记录，Target 中缺失
                         String sourceKey = getCompositeKey(sourceRs, sourceUniqueKeys, sourceKeyMap);
-                        discrepancies++;
-
                         CompareDetailLog log = new CompareDetailLog();
                         log.setCompareTaskId(compareTaskId);
                         log.setSourceDataSourceId(config.getSourceDataSourceId());
                         log.setTargetDataSourceId(config.getTargetDataSourceId());
                         log.setSourceTable(sourceTable);
                         log.setTargetTable(targetTable);
-                        log.setType(1); // source表唯一键缺失
+                        log.setType(2); // 类型2：target表唯一键缺失
                         log.setSourceUniqueKeys(sourceKey);
+                        log.setTargetUniqueKeys(null);
+                        log.setSourceFieldKey(null);
+                        log.setSourceFieldValue(null);
+                        log.setTargetFieldKey(null);
+                        log.setTargetFieldValue(null);
                         log.setCreateTime(LocalDateTime.now());
                         log.setUpdateTime(LocalDateTime.now());
 
-                        detailLogs.add(log);
-
-                        // 达到1000条，批量插入
-                        if (detailLogs.size() >= 1000) {
-                            compareDetailLogMapper.batchInsert(new ArrayList<>(detailLogs));
-                            detailLogs.clear();
-                        }
-
+                        compareDetailLogMapper.insertCompareDetailLog(log);
+                        discrepancies++;
                         sourceHasNext = sourceRs.next();
                     } else {
                         // Target 还有剩余记录，Source 中缺失
                         String targetKey = getCompositeKey(targetRs, targetUniqueKeys, targetKeyMap);
-                        discrepancies++;
-
                         CompareDetailLog log = new CompareDetailLog();
                         log.setCompareTaskId(compareTaskId);
                         log.setSourceDataSourceId(config.getSourceDataSourceId());
                         log.setTargetDataSourceId(config.getTargetDataSourceId());
                         log.setSourceTable(sourceTable);
                         log.setTargetTable(targetTable);
-                        log.setType(2); // target表唯一键缺失
+                        log.setType(1); // 类型1：source表唯一键缺失
+                        log.setSourceUniqueKeys(null);
                         log.setTargetUniqueKeys(targetKey);
+                        log.setSourceFieldKey(null);
+                        log.setSourceFieldValue(null);
+                        log.setTargetFieldKey(null);
+                        log.setTargetFieldValue(null);
                         log.setCreateTime(LocalDateTime.now());
                         log.setUpdateTime(LocalDateTime.now());
 
-                        detailLogs.add(log);
-
-                        // 达到1000条，批量插入
-                        if (detailLogs.size() >= 1000) {
-                            compareDetailLogMapper.batchInsert(new ArrayList<>(detailLogs));
-                            detailLogs.clear();
-                        }
-
+                        compareDetailLogMapper.insertCompareDetailLog(log);
+                        discrepancies++;
                         targetHasNext = targetRs.next();
                     }
                 }
 
-                // 比对字段不一致的情况已经在上面处理
-
             } catch (SQLException e) {
                 e.printStackTrace();
-                // 记录异常情况，您可以选择将异常信息记录到COMPARE_DETAIL_LOG中
+                // 在异常情况下，记录一处不一致
+                CompareDetailLog log = new CompareDetailLog();
+                log.setCompareTaskId(compareTaskId);
+                log.setSourceDataSourceId(config.getSourceDataSourceId());
+                log.setTargetDataSourceId(config.getTargetDataSourceId());
+                log.setSourceTable(sourceTable);
+                log.setTargetTable(targetTable);
+                log.setType(3); // 类型3：字段不一致（异常类型也归为字段不一致）
+                log.setSourceUniqueKeys(null);
+                log.setTargetUniqueKeys(null);
+                log.setSourceFieldKey("Exception");
+                log.setSourceFieldValue(e.getMessage());
+                log.setTargetFieldKey("Exception");
+                log.setTargetFieldValue(e.getMessage());
+                log.setCreateTime(LocalDateTime.now());
+                log.setUpdateTime(LocalDateTime.now());
+
+                compareDetailLogMapper.insertCompareDetailLog(log);
+                discrepancies++;
             } finally {
                 // 关闭资源
                 closeQuietly(targetRs);
@@ -334,13 +315,7 @@ public class MemoryBasedStrategy3 implements ConsistencyCheckStrategy {
                 closeQuietly(sourceConn);
             }
 
-            // 插入剩余的 CompareDetailLog 记录
-            if (!detailLogs.isEmpty()) {
-                compareDetailLogMapper.batchInsert(new ArrayList<>(detailLogs));
-                detailLogs.clear();
-            }
-
-            return new ShardCompareResult(discrepancies, "");
+            return new ShardCompareResult(discrepancies);
         }
 
         /**
@@ -450,19 +425,13 @@ public class MemoryBasedStrategy3 implements ConsistencyCheckStrategy {
      */
     private static class ShardCompareResult {
         private final int discrepancies;
-        private final String description;
 
-        public ShardCompareResult(int discrepancies, String description) {
+        public ShardCompareResult(int discrepancies) {
             this.discrepancies = discrepancies;
-            this.description = description;
         }
 
         public int getDiscrepancies() {
             return discrepancies;
-        }
-
-        public String getDescription() {
-            return description;
         }
     }
 

@@ -13,12 +13,11 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+
 /**
-    实现了
-    基于内存
-    md5分片
-   多线程
-   数据一致性比对
+ * 基于内存比对
+ * md5分片  多线程
+ * 不一致信息全部一次性拼接在description中
  */
 @Component("memory2")
 public class MemoryBasedStrategy2 implements ConsistencyCheckStrategy {
