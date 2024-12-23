@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.southern.dataconsistencychecker.mapper.CompareConfigMapper">
+
+    <!-- 现有的 SQL 语句 -->
+
+    <!-- 根据 ID 删除 CompareConfig -->
+    <delete id="deleteCompareConfigById" parameterType="long">
+        DELETE FROM compare_config WHERE id = #{id}
+    </delete>
+
+    <!-- 更新 CompareConfig（部分更新） -->
+    <update id="updateCompareConfig" parameterType="com.southern.dataconsistencychecker.pojo.entity.CompareConfig">
+        UPDATE compare_config
+        <set>
+            <if test="sourceDataSourceId != null">
+                source_data_source_id = #{sourceDataSourceId},
+            </if>
+            <if test="targetDataSourceId != null">
+                target_data_source_id = #{targetDataSourceId},
+            </if>
+            <if test="sourceTable != null">
+                source_table = #{sourceTable},
+            </if>
+            <if test="targetTable != null">
+                target_table = #{targetTable},
+            </if>
+            <if test="sourceConditions != null">
+                source_conditions = #{sourceConditions},
+            </if>
+            <if test="targetConditions != null">
+                target_conditions = #{targetConditions},
+            </if>
+            <if test="sourceCompareFields != null">
+                source_compare_fields = #{sourceCompareFields},
+            </if>
+            <if test="targetCompareFields != null">
+                target_compare_fields = #{targetCompareFields},
+            </if>
+            <if test="sourceUniqueKeys != null">
+                source_unique_keys = #{sourceUniqueKeys},
+            </if>
+            <if test="targetUniqueKeys != null">
+                target_unique_keys = #{targetUniqueKeys},
+            </if>
+            <if test="cronExpression != null">
+                cron_expression = #{cronExpression},
+            </if>
+            <if test="notificationEmail != null">
+                notification_email = #{notificationEmail},
+            </if>
+            <if test="notificationPhone != null">
+                notification_phone = #{notificationPhone},
+            </if>
+            <if test="updateTime != null">
+                update_time = #{updateTime},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+</mapper>

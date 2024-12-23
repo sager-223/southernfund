@@ -1,6 +1,6 @@
 package com.southern.dataconsistencychecker.scheduler;
 
-import com.southern.dataconsistencychecker.entity.CompareConfig;
+import com.southern.dataconsistencychecker.pojo.entity.CompareConfig;
 import com.southern.dataconsistencychecker.factory.ConsistencyCheckStrategyFactory;
 import com.southern.dataconsistencychecker.strategy.ConsistencyCheckStrategy;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +29,7 @@ public class TaskScheduler {
     }
 
     public void scheduleTask(CompareConfig config) {
-        String strategyType = "memory3"; // 根据config决定使用哪种策略，这里假设使用内存策略
+        String strategyType = "memory5"; // 根据config决定使用哪种策略，这里假设使用内存策略
         ConsistencyCheckStrategy strategy = strategyFactory.getStrategy(strategyType);
 
         // 使用 CronTrigger 处理 CRON 表达式
@@ -50,5 +50,17 @@ public class TaskScheduler {
         }
     }
 
-    // 移除或重构 parseCronExpression 方法
+    /**
+     * 根据任务ID查询任务状态
+     * @param id 任务ID
+     * @return 如果任务正在运行，返回true；否则返回false
+     */
+    public boolean isTaskRunning(Long id) {
+        ScheduledFuture<?> future = scheduledTasks.get(id);
+        if (future == null) {
+            return false;
+        }
+        // 检查任务是否被取消或已经完成
+        return !future.isCancelled() && !future.isDone();
+    }
 }

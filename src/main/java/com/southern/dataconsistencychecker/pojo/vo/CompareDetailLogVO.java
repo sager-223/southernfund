@@ -1,12 +1,19 @@
-package com.southern.dataconsistencychecker.entity;
+package com.southern.dataconsistencychecker.pojo.vo;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
 
 @Data
-public class CompareDetailLog implements Serializable {
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+public class CompareDetailLogVO implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
@@ -82,8 +89,5 @@ public class CompareDetailLog implements Serializable {
      */
     private LocalDateTime createTime;
 
-    /**
-     * 记录更新时间
-     */
-    private LocalDateTime updateTime;
+
 }

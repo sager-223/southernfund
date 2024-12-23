@@ -1,12 +1,18 @@
-package com.southern.dataconsistencychecker.entity;
+package com.southern.dataconsistencychecker.pojo.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Data
-public class DataSourceConfig implements Serializable {
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+public class UpdateDataSourceRequest implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private Long id;
@@ -18,8 +24,6 @@ public class DataSourceConfig implements Serializable {
     private String username;
     private String password;
     private String additionalParams;
-    private LocalDateTime createTime;
-    private LocalDateTime updateTime;
     private String connectionType;
 
 }

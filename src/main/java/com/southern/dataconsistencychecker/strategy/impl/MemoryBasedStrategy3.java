@@ -1,9 +1,9 @@
 package com.southern.dataconsistencychecker.strategy.impl;
 
 import com.alibaba.fastjson2.JSON;
-import com.southern.dataconsistencychecker.entity.CompareConfig;
-import com.southern.dataconsistencychecker.entity.CompareResult;
-import com.southern.dataconsistencychecker.entity.CompareDetailLog; // 新增导入
+import com.southern.dataconsistencychecker.pojo.entity.CompareConfig;
+import com.southern.dataconsistencychecker.pojo.entity.CompareResult;
+import com.southern.dataconsistencychecker.pojo.entity.CompareDetailLog; // 新增导入
 import com.southern.dataconsistencychecker.manager.DataSourceManager;
 import com.southern.dataconsistencychecker.mapper.CompareDetailLogMapper; // 新增导入
 import com.southern.dataconsistencychecker.mapper.CompareResultMapper;

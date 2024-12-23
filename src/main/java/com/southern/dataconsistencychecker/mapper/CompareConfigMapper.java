@@ -1,6 +1,6 @@
 package com.southern.dataconsistencychecker.mapper;
 
-import com.southern.dataconsistencychecker.entity.CompareConfig;
+import com.southern.dataconsistencychecker.pojo.entity.CompareConfig;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -21,4 +21,20 @@ public interface CompareConfigMapper {
 
     @Update("UPDATE COMPARE_CONFIG SET CRON_EXPRESSION = #{cronExpression} WHERE ID = #{id}")
     void updateCronExpression(@Param("id") Long id, @Param("cronExpression") String cronExpression);
+
+    /**
+     * 根据 ID 删除 CompareConfig
+     *
+     * @param id CompareConfig 的 ID
+     * @return 受影响的行数
+     */
+    int deleteCompareConfigById(@Param("id") Long id);
+
+    /**
+     * 更新 CompareConfig（部分更新）
+     *
+     * @param config 要更新的 CompareConfig
+     * @return 受影响的行数
+     */
+    int updateCompareConfig(CompareConfig config);
 }

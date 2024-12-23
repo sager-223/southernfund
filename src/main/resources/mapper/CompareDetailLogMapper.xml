@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.southern.dataconsistencychecker.mapper.CompareDetailLogMapper">
+
+
+
+    <!-- 根据筛选条件和分页查询比对细节日志 -->
+<!--    <select id="selectFilteredCompareDetailLogVO" parameterType="com.southern.dataconsistencychecker.pojo.dto.CompareDetailLogFilterDTO" resultType="com.southern.dataconsistencychecker.pojo.vo.CompareDetailLogVO">-->
+<!--        SELECT-->
+<!--        id, compare_task_id AS compareTaskId, source_data_source_id AS sourceDataSourceId,-->
+<!--        target_data_source_id AS targetDataSourceId, source_table AS sourceTable,-->
+<!--        target_table AS targetTable, type, source_unique_keys AS sourceUniqueKeys,-->
+<!--        target_unique_keys AS targetUniqueKeys, source_field_key AS sourceFieldKey,-->
+<!--        source_field_value AS sourceFieldValue, target_field_key AS targetFieldKey,-->
+<!--        target_field_value AS targetFieldValue, create_time AS createTime-->
+<!--        FROM compare_detail_log-->
+<!--        <where>-->
+<!--            <if test="filter.compareTaskId != null">-->
+<!--                AND compare_task_id = #{filter.compareTaskId}-->
+<!--            </if>-->
+<!--            <if test="filter.type != null">-->
+<!--                AND type = #{filter.type}-->
+<!--            </if>-->
+<!--            <if test="filter.createTimeStart != null and filter.createTimeEnd != null">-->
+<!--                AND create_time BETWEEN #{filter.createTimeStart} AND #{filter.createTimeEnd}-->
+<!--            </if>-->
+<!--        </where>-->
+<!--        ORDER BY create_time DESC-->
+<!--    </select>-->
+    <!-- 根据筛选条件和分页查询比对细节日志 -->
+    <select id="selectFilteredCompareDetailLogVO" parameterType="com.southern.dataconsistencychecker.pojo.dto.CompareDetailLogFilterDTO" resultType="com.southern.dataconsistencychecker.pojo.vo.CompareDetailLogVO">
+        SELECT
+        id,
+        compare_task_id AS compareTaskId,
+        source_data_source_id AS sourceDataSourceId,
+        target_data_source_id AS targetDataSourceId,
+        source_table AS sourceTable,
+        target_table AS targetTable,
+        type,
+        source_unique_keys AS sourceUniqueKeys,
+        target_unique_keys AS targetUniqueKeys,
+        source_field_key AS sourceFieldKey,
+        source_field_value AS sourceFieldValue,
+        target_field_key AS targetFieldKey,
+        target_field_value AS targetFieldValue,
+        create_time AS createTime
+        FROM compare_detail_log
+        <where>
+            <if test="filter.compareTaskId != null">
+                AND compare_task_id = #{filter.compareTaskId}
+            </if>
+            <if test="filter.type != null">
+                AND type = #{filter.type}
+            </if>
+            <if test="filter.createTimeStart != null and filter.createTimeEnd != null">
+                AND create_time BETWEEN TO_TIMESTAMP(#{filter.createTimeStart}, 'YYYY-MM-DD HH24:MI:SS')
+                AND TO_TIMESTAMP(#{filter.createTimeEnd}, 'YYYY-MM-DD HH24:MI:SS')
+            </if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+
+    <select id="selectById" parameterType="long" resultType="com.southern.dataconsistencychecker.pojo.entity.CompareDetailLog">
+        SELECT
+            id,
+            compare_task_id,
+            source_data_source_id,
+            target_data_source_id,
+            source_table,
+            target_table,
+            type,
+            source_unique_keys,
+            target_unique_keys,
+            source_field_key,
+            source_field_value,
+            target_field_key,
+            target_field_value,
+            create_time,
+            update_time,
+            repair_source,
+            repair_target
+        FROM
+            compare_detail_log
+        WHERE
+            id = #{id}
+    </select>
+
+</mapper>

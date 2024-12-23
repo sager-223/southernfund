@@ -77,6 +77,13 @@
 			<version>2.0.35</version> <!-- 请使用最新的稳定版本 -->
 		</dependency>
 
+		<!-- MyBatis PageHelper -->
+		<dependency>
+			<groupId>com.github.pagehelper</groupId>
+			<artifactId>pagehelper-spring-boot-starter</artifactId>
+			<version>1.4.6</version>
+		</dependency>
+
 <!--		&lt;!&ndash; JSON Processing &ndash;&gt;-->
 <!--		<dependency>-->
 <!--			<groupId>com.fasterxml.jackson.core</groupId>-->
